@@ -1,0 +1,266 @@
+/* ==========================================================================
+   Lingua — Global CSS
+   Imports Tailwind layers, design tokens, and utility classes.
+   ========================================================================== */
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
+@import "./theme/colors.css";
+@import "./theme/typography.css";
+
+/* ==========================================================================
+   Theme — Register design tokens with Tailwind
+   ========================================================================== */
+@layer theme {
+  @theme {
+
+    /* ── Brand Colors ── */
+    --color-primary: #6c4ef5;
+    --color-primary-deep: #5b3bf6;
+    --color-lingua-blue: #4d8bff;
+    --color-lingua-green: #21c16b;
+
+    /* ── Semantic Colors ── */
+    --color-success: #21c16b;
+    --color-warning: #ffc800;
+    --color-streak: #ff8a00;
+    --color-error: #ff4d4f;
+    --color-info: #4d8bff;
+
+    /* ── Neutral / Text / Surface ── */
+    --color-text-primary: #0d132b;
+    --color-text-secondary: #6b7280;
+    --color-border: #e5e7eb;
+    --color-surface: #f6f7fb;
+    --color-background: #ffffff;
+
+    /* ── Font Family ── */
+    --font-sans: "Poppins_400Regular", system-ui, sans-serif;
+
+    /* ── Border Radius ── */
+    --radius-card: 16px;
+    --radius-pill: 9999px;
+    --radius-input: 12px;
+    --radius-button: 12px;
+
+    /* ── Spacing extras ── */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+  }
+}
+
+/* ==========================================================================
+   Base — Platform-specific font definitions
+   ========================================================================== */
+@media android {
+  :root {
+    --font-sans: "Poppins_400Regular", normal;
+  }
+}
+
+@media ios {
+  :root {
+    --font-sans: "Poppins_400Regular", system-ui;
+  }
+}
+
+/* ==========================================================================
+   Utilities — BEM-style reusable class patterns
+   ========================================================================== */
+
+/* ── Layout ── */
+.screen {
+  flex: 1;
+  background-color: var(--color-background);
+}
+
+.screen--surface {
+  flex: 1;
+  background-color: var(--color-surface);
+}
+
+/* ── Card ── */
+.card {
+  background-color: var(--color-background);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  border-width: 1px;
+  border-color: var(--color-border);
+}
+
+.card--elevated {
+  background-color: var(--color-background);
+  border-radius: var(--radius-card);
+  padding: 16px;
+}
+
+/* ── Button ── */
+.btn {
+  border-radius: var(--radius-button);
+  padding-horizontal: 24px;
+  padding-vertical: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn--primary {
+  background-color: var(--color-primary);
+}
+
+.btn--outline {
+  background-color: transparent;
+  border-width: 1.5px;
+  border-color: var(--color-primary);
+}
+
+.btn--success {
+  background-color: var(--color-success);
+}
+
+.btn--danger {
+  background-color: var(--color-error);
+}
+
+/* ── Button text ── */
+.btn__label {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+.btn__label--outline {
+  color: var(--color-primary);
+}
+
+/* ── Typography ── */
+.text-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+.text-h2 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.text-h3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.text-h4 {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+.text-body-lg {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.text-body-md {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.text-body-sm {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.text-caption {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+/* ── Badge ── */
+.badge {
+  border-radius: 9999px;
+  padding-horizontal: 10px;
+  padding-vertical: 4px;
+  align-self: flex-start;
+}
+
+.badge--primary {
+  background-color: var(--color-primary);
+}
+
+.badge--success {
+  background-color: var(--color-success);
+}
+
+.badge--warning {
+  background-color: var(--color-warning);
+}
+
+.badge--error {
+  background-color: var(--color-error);
+}
+
+.badge__text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ── XP Bar ── */
+.xp-bar {
+  height: 12px;
+  border-radius: 9999px;
+  background-color: var(--color-border);
+  overflow: hidden;
+}
+
+.xp-bar__fill {
+  height: 12px;
+  border-radius: 9999px;
+  background-color: var(--color-success);
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+/* ── Input ── */
+.input {
+  border-radius: var(--radius-input);
+  border-width: 1.5px;
+  border-color: var(--color-border);
+  padding-horizontal: 16px;
+  padding-vertical: 12px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+.input--focused {
+  border-color: var(--color-primary);
+}

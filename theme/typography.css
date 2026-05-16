@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Lingua Design Tokens — Typography
+   Font: Poppins (loaded via expo-google-fonts)
+   Source: 01-design-system.png
+   ========================================================================== */
+
+@layer theme {
+  @theme {
+    /* ── Font family ── */
+    --font-sans: "Poppins", system-ui, sans-serif;
+    --font-display: "Poppins", system-ui, sans-serif;
+
+    /* ── Font sizes (with matching line-heights) ── */
+    /* H1 — Page / Screen Title | 32px Bold 1.2 */
+    --text-h1: 2rem;
+    --text-h1--line-height: 1.2;
+    --text-h1--font-weight: 700;
+
+    /* H2 — Section Title | 24px SemiBold 1.3 */
+    --text-h2: 1.5rem;
+    --text-h2--line-height: 1.3;
+    --text-h2--font-weight: 600;
+
+    /* H3 — Card / Module Title | 20px SemiBold 1.3 */
+    --text-h3: 1.25rem;
+    --text-h3--line-height: 1.3;
+    --text-h3--font-weight: 600;
+
+    /* H4 — Subheading | 16px Medium 1.4 */
+    --text-h4: 1rem;
+    --text-h4--line-height: 1.4;
+    --text-h4--font-weight: 500;
+
+    /* Body Large — Important content | 16px Regular 1.6 */
+    --text-body-lg: 1rem;
+    --text-body-lg--line-height: 1.6;
+    --text-body-lg--font-weight: 400;
+
+    /* Body Medium — Body text | 14px Regular 1.6 */
+    --text-body-md: 0.875rem;
+    --text-body-md--line-height: 1.6;
+    --text-body-md--font-weight: 400;
+
+    /* Body Small — Supporting text | 13px Regular 1.6 */
+    --text-body-sm: 0.8125rem;
+    --text-body-sm--line-height: 1.6;
+    --text-body-sm--font-weight: 400;
+
+    /* Caption — Labels, meta text | 11px Regular 1.4 */
+    --text-caption: 0.6875rem;
+    --text-caption--line-height: 1.4;
+    --text-caption--font-weight: 400;
+  }
+}
