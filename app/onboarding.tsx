@@ -58,7 +58,7 @@ export default function OnboardingScreen() {
       <View style={styles.ctaWrapper}>
         <TouchableOpacity
           style={styles.ctaButton}
-          onPress={() => router.replace("/(tabs)")}
+          onPress={() => router.push("/(auth)/sign-up")}
           activeOpacity={0.85}
         >
           <Text style={styles.ctaLabel}>Get Started</Text>
