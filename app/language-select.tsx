@@ -2,9 +2,10 @@ import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
 import { images } from "@/constants/images";
 import { languages } from "@/data/languages";
-import type { Language } from "@/types/learning";
+import { useLanguageStore } from "@/store/languageStore";
+import type { Language, LanguageCode } from "@/types/learning";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   FlatList,
@@ -19,7 +20,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LanguageSelectScreen() {
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<LanguageCode | null>(null);
+  const nav = useRouter();
+  const canGoBack = router.canGoBack();
+  const setLanguage = useLanguageStore((s) => s.setLanguage);
 
   const filtered = languages.filter(
     (l) =>
@@ -29,17 +33,23 @@ export default function LanguageSelectScreen() {
 
   function handleConfirm() {
     if (!selected) return;
-    // TODO: persist to Zustand store in next feature
-    router.back();
+    setLanguage(selected);
+    // Replace so the user can't navigate back to language select
+    router.replace("/");
   }
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        {/* Only show back button when there is a screen to go back to */}
+        {canGoBack ? (
+          <TouchableOpacity onPress={() => nav.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backBtn} />
+        )}
         <Text style={styles.headerTitle}>Choose a language</Text>
         {/* spacer to centre the title */}
         <View style={styles.backBtn} />
