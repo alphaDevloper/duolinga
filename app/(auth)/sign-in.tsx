@@ -2,6 +2,8 @@ import { VerificationModal } from "@/components/VerificationModal";
 import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
 import { images } from "@/constants/images";
+import { useSignIn } from "@clerk/expo/legacy";
+import { useSSO } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -19,12 +21,96 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { isLoaded, signIn, setActive } = useSignIn();
+  const { startSSOFlow } = useSSO();
   const [email, setEmail] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
-  const handleSignIn = () => {
-    setModalVisible(true);
+  /** Step 1: Start the email-code sign-in flow */
+  const handleSignIn = async () => {
+    if (!isLoaded) return;
+    setSignInLoading(true);
+    setSignInError(null);
+
+    try {
+      // Create the sign-in with email_code as the first factor
+      await signIn.create({
+        identifier: email,
+        strategy: "email_code",
+      });
+      setModalVisible(true);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Sign in failed. Please try again.";
+      setSignInError(msg);
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+  /** Step 2: Verify the OTP code */
+  const handleVerify = async (code: string) => {
+    if (!isLoaded) return;
+    setVerifyLoading(true);
+    setVerifyError(null);
+
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: "email_code",
+        code,
+      });
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        setModalVisible(false);
+        router.replace("/");
+      } else {
+        setVerifyError("Verification incomplete. Please try again.");
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Invalid code. Please try again.";
+      setVerifyError(msg);
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  /** Resend the email code by restarting the sign-in */
+  const handleResend = async () => {
+    if (!isLoaded) return;
+    try {
+      await signIn.create({
+        identifier: email,
+        strategy: "email_code",
+      });
+      setVerifyError(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not resend code.";
+      setVerifyError(msg);
+    }
+  };
+
+  /** OAuth social sign-in — opens a browser and redirects back to the app */
+  const handleSocialAuth = async (strategy: string) => {
+    try {
+      const { createdSessionId, setActive: setSSOActive } = await startSSOFlow({
+        strategy: strategy as import("@clerk/shared/types").OAuthStrategy,
+        redirectUrl: "duolingoclone://",
+      });
+      if (createdSessionId && setSSOActive) {
+        await setSSOActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Social sign-in failed. Please try again.";
+      setSignInError(msg);
+    }
   };
 
   return (
@@ -88,13 +174,21 @@ export default function SignInScreen() {
               />
             </View>
 
+            {/* Sign-in error */}
+            {signInError ? (
+              <Text style={styles.errorText}>{signInError}</Text>
+            ) : null}
+
             {/* Sign In CTA */}
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, signInLoading && { opacity: 0.6 }]}
               onPress={handleSignIn}
               activeOpacity={0.85}
+              disabled={signInLoading || !email}
             >
-              <Text style={styles.primaryBtnLabel}>Log In</Text>
+              <Text style={styles.primaryBtnLabel}>
+                {signInLoading ? "Sending code…" : "Log In"}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -112,6 +206,7 @@ export default function SignInScreen() {
               label="Continue with Google"
               color="#4285F4"
               bg="#fff"
+              onPress={() => handleSocialAuth("oauth_google")}
             />
             <SocialButton
               icon="f"
@@ -119,6 +214,7 @@ export default function SignInScreen() {
               color="#1877F2"
               bg="#1877F2"
               textColor="#fff"
+              onPress={() => handleSocialAuth("oauth_facebook")}
             />
             <SocialButton
               icon=""
@@ -126,6 +222,7 @@ export default function SignInScreen() {
               color="#000"
               bg="#fff"
               isApple
+              onPress={() => handleSocialAuth("oauth_apple")}
             />
           </View>
 
@@ -143,10 +240,15 @@ export default function SignInScreen() {
         visible={modalVisible}
         email={email}
         onClose={() => setModalVisible(false)}
+        onVerify={handleVerify}
+        onResend={handleResend}
+        isLoading={verifyLoading}
+        error={verifyError}
       />
     </SafeAreaView>
   );
 }
+
 
 /* ── Social Button ── */
 function SocialButton({
@@ -156,6 +258,7 @@ function SocialButton({
   bg,
   textColor,
   isApple,
+  onPress,
 }: {
   icon: string;
   label: string;
@@ -163,14 +266,16 @@ function SocialButton({
   bg: string;
   textColor?: string;
   isApple?: boolean;
+  onPress?: () => void;
 }) {
   return (
     <TouchableOpacity
       style={[styles.socialBtn, { backgroundColor: bg }]}
       activeOpacity={0.8}
+      onPress={onPress}
     >
       {isApple ? (
-        <Text style={[styles.socialIconApple, { color }]}>  </Text>
+        <Text style={[styles.socialIconApple, { color }]}> </Text>
       ) : (
         <View
           style={[
@@ -373,5 +478,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 14,
     color: colors.primary,
+  },
+  errorText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    color: "#E53E3E",
+    marginTop: -6,
   },
 });

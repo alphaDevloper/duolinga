@@ -1,35 +1,49 @@
+import { useAuth, useClerk } from "@clerk/expo";
 import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
 import { images } from "@/constants/images";
-import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Redirect } from "expo-router";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
- * Home screen — entry point of the app.
- * Links to the onboarding flow.
+ * Entry point — redirects based on Clerk auth state.
+ *   Signed in  → home (tabs) — placeholder for now
+ *   Signed out → /onboarding
  */
 export default function Index() {
-  const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { signOut } = useClerk();
 
+  // Wait for Clerk to finish loading session
+  if (!isLoaded) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  // Redirect signed-out users to onboarding
+  if (!isSignedIn) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  // Authenticated home placeholder (will be replaced by (tabs) later)
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoRow}>
-          <Image source={images.mascotLogo} style={styles.logoImage} />
-          <Text style={styles.appName}>Duolinga</Text>
-        </View>
+        <Image source={images.mascotLogo} style={styles.logoImage} />
+        <Text style={styles.title}>Welcome back! 🎉</Text>
+        <Text style={styles.subtitle}>You're signed in. Home screen coming soon.</Text>
 
-        <Text style={styles.tagline}>Learn languages with AI.</Text>
-
-        {/* Go to Onboarding */}
+        {/* ── Logout button (for testing) ── */}
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push("/onboarding")}
+          style={styles.logoutBtn}
+          onPress={() => signOut()}
           activeOpacity={0.85}
         >
-          <Text style={styles.buttonLabel}>View Onboarding →</Text>
+          <Text style={styles.logoutBtnLabel}>Sign Out</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -37,6 +51,12 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -46,38 +66,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
-    gap: 20,
-  },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
+    gap: 16,
   },
   logoImage: {
-    width: 48,
-    height: 48,
+    width: 80,
+    height: 80,
     resizeMode: "contain",
   },
-  appName: {
+  title: {
     fontFamily: fontFamily.bold,
-    fontSize: 30,
+    fontSize: 26,
     color: colors.textPrimary,
-    letterSpacing: -0.5,
+    textAlign: "center",
   },
-  tagline: {
+  subtitle: {
     fontFamily: fontFamily.regular,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textSecondary,
     textAlign: "center",
   },
-  button: {
-    marginTop: 12,
-    backgroundColor: colors.primary,
+  logoutBtn: {
+    marginTop: 8,
+    backgroundColor: "#FF4D4F",
     borderRadius: 16,
     paddingVertical: 14,
-    paddingHorizontal: 28,
+    paddingHorizontal: 36,
   },
-  buttonLabel: {
+  logoutBtnLabel: {
     fontFamily: fontFamily.semiBold,
     fontSize: 16,
     color: "#FFFFFF",

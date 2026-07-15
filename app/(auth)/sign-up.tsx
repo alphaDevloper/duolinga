@@ -2,6 +2,8 @@ import { VerificationModal } from "@/components/VerificationModal";
 import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
 import { images } from "@/constants/images";
+import { useSignUp } from "@clerk/expo/legacy";
+import { useSSO } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -19,15 +21,92 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { isLoaded, signUp, setActive } = useSignUp();
+  const { startSSOFlow } = useSSO();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [signUpLoading, setSignUpLoading] = useState(false);
+  const [signUpError, setSignUpError] = useState<string | null>(null);
 
-  const handleSignUp = () => {
-    setModalVisible(true);
+  /** Step 1: Create the sign-up and trigger email verification */
+  const handleSignUp = async () => {
+    if (!isLoaded) return;
+    setSignUpLoading(true);
+    setSignUpError(null);
+
+    try {
+      await signUp.create({ emailAddress: email, password });
+      // Send the verification email
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setModalVisible(true);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Sign up failed. Please try again.";
+      setSignUpError(msg);
+    } finally {
+      setSignUpLoading(false);
+    }
+  };
+
+  /** Step 2: Verify the OTP code the user entered */
+  const handleVerify = async (code: string) => {
+    if (!isLoaded) return;
+    setVerifyLoading(true);
+    setVerifyError(null);
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({ code });
+      if (result.status === "complete") {
+        // Activate the new session and navigate home
+        await setActive({ session: result.createdSessionId });
+        setModalVisible(false);
+        router.replace("/");
+      } else {
+        setVerifyError("Verification incomplete. Please try again.");
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Invalid code. Please try again.";
+      setVerifyError(msg);
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  /** Resend the verification email */
+  const handleResend = async () => {
+    if (!isLoaded) return;
+    try {
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setVerifyError(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not resend code.";
+      setVerifyError(msg);
+    }
+  };
+
+  /** OAuth social sign-up/in — opens a browser and redirects back to the app */
+  const handleSocialAuth = async (strategy: string) => {
+    try {
+      const { createdSessionId, setActive: setSSOActive } = await startSSOFlow({
+        strategy: strategy as import("@clerk/shared/types").OAuthStrategy,
+        redirectUrl: "duolingoclone://",
+      });
+      if (createdSessionId && setSSOActive) {
+        await setSSOActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Social sign-in failed. Please try again.";
+      setSignUpError(msg);
+    }
   };
 
   return (
@@ -123,13 +202,21 @@ export default function SignUpScreen() {
               </View>
             </View>
 
+            {/* Sign Up error */}
+            {signUpError ? (
+              <Text style={styles.errorText}>{signUpError}</Text>
+            ) : null}
+
             {/* Sign Up CTA */}
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, signUpLoading && { opacity: 0.6 }]}
               onPress={handleSignUp}
               activeOpacity={0.85}
+              disabled={signUpLoading || !email || !password}
             >
-              <Text style={styles.primaryBtnLabel}>Sign Up</Text>
+              <Text style={styles.primaryBtnLabel}>
+                {signUpLoading ? "Creating account…" : "Sign Up"}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -142,9 +229,29 @@ export default function SignUpScreen() {
 
           {/* ── Social Buttons ── */}
           <View style={styles.socialGroup}>
-            <SocialButton icon="G" label="Continue with Google" color="#4285F4" bg="#fff" />
-            <SocialButton icon="f" label="Continue with Facebook" color="#1877F2" bg="#1877F2" textColor="#fff" />
-            <SocialButton icon="" label="Continue with Apple" color="#000" bg="#fff" isApple />
+            <SocialButton
+              icon="G"
+              label="Continue with Google"
+              color="#4285F4"
+              bg="#fff"
+              onPress={() => handleSocialAuth("oauth_google")}
+            />
+            <SocialButton
+              icon="f"
+              label="Continue with Facebook"
+              color="#1877F2"
+              bg="#1877F2"
+              textColor="#fff"
+              onPress={() => handleSocialAuth("oauth_facebook")}
+            />
+            <SocialButton
+              icon=""
+              label="Continue with Apple"
+              color="#000"
+              bg="#fff"
+              isApple
+              onPress={() => handleSocialAuth("oauth_apple")}
+            />
           </View>
 
           {/* ── Footer link ── */}
@@ -161,10 +268,15 @@ export default function SignUpScreen() {
         visible={modalVisible}
         email={email}
         onClose={() => setModalVisible(false)}
+        onVerify={handleVerify}
+        onResend={handleResend}
+        isLoading={verifyLoading}
+        error={verifyError}
       />
     </SafeAreaView>
   );
 }
+
 
 /* ── Social Button ── */
 function SocialButton({
@@ -174,6 +286,7 @@ function SocialButton({
   bg,
   textColor,
   isApple,
+  onPress,
 }: {
   icon: string;
   label: string;
@@ -181,14 +294,16 @@ function SocialButton({
   bg: string;
   textColor?: string;
   isApple?: boolean;
+  onPress?: () => void;
 }) {
   return (
     <TouchableOpacity
       style={[styles.socialBtn, { backgroundColor: bg }]}
       activeOpacity={0.8}
+      onPress={onPress}
     >
       {isApple ? (
-        <Text style={[styles.socialIconApple, { color }]}>  </Text>
+        <Text style={[styles.socialIconApple, { color }]}> </Text>
       ) : (
         <View
           style={[
@@ -404,5 +519,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 14,
     color: colors.primary,
+  },
+  errorText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    color: "#E53E3E",
+    marginTop: -6,
   },
 });

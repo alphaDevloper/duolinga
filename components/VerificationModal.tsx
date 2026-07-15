@@ -1,6 +1,5 @@
 import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
-import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -18,14 +17,25 @@ interface VerificationModalProps {
   visible: boolean;
   email: string;
   onClose: () => void;
+  /** Called with the 6-digit code once the user finishes entering it */
+  onVerify: (code: string) => Promise<void>;
+  /** Called when user taps "Resend code" */
+  onResend: () => Promise<void>;
+  /** Shows a loading/disabled state while Clerk is processing */
+  isLoading?: boolean;
+  /** Displays an inline error under the digit boxes */
+  error?: string | null;
 }
 
 export function VerificationModal({
   visible,
   email,
   onClose,
+  onVerify,
+  onResend,
+  isLoading = false,
+  error = null,
 }: VerificationModalProps) {
-  const router = useRouter();
   const [code, setCode] = useState<string[]>(Array(6).fill(""));
   const inputRef = useRef<TextInput>(null);
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -63,12 +73,9 @@ export function VerificationModal({
     const arr = digits.split("").concat(Array(6).fill("")).slice(0, 6);
     setCode(arr);
 
-    if (digits.length === 6) {
-      // Navigate to home when code is complete
-      setTimeout(() => {
-        onClose();
-        router.replace("/");
-      }, 250);
+    if (digits.length === 6 && !isLoading) {
+      // Delegate verification to the parent screen
+      onVerify(digits);
     }
   };
 
@@ -118,6 +125,7 @@ export function VerificationModal({
             maxLength={6}
             caretHidden
             autoComplete="one-time-code"
+            editable={!isLoading}
           />
 
           {/* Visual digit boxes */}
@@ -140,9 +148,19 @@ export function VerificationModal({
             ))}
           </TouchableOpacity>
 
+          {/* Inline error */}
+          {error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : null}
+
           <Text style={styles.resendText}>
             Didn't receive it?{" "}
-            <Text style={styles.resendLink}>Resend code</Text>
+            <Text
+              style={[styles.resendLink, isLoading && { opacity: 0.4 }]}
+              onPress={() => !isLoading && onResend()}
+            >
+              Resend code
+            </Text>
           </Text>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -206,7 +224,7 @@ const styles = StyleSheet.create({
   dotsRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 28,
+    marginBottom: 12,
   },
   digitBox: {
     width: 46,
@@ -232,13 +250,22 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: colors.textPrimary,
   },
+  errorText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    color: "#E53E3E",
+    textAlign: "center",
+    marginBottom: 12,
+  },
   resendText: {
     fontFamily: fontFamily.regular,
     fontSize: 14,
     color: colors.textSecondary,
+    marginTop: 16,
   },
   resendLink: {
     fontFamily: fontFamily.semiBold,
     color: colors.primary,
   },
 });
+
