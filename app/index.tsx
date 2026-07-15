@@ -2,7 +2,7 @@ import { useAuth, useClerk } from "@clerk/expo";
 import { colors } from "@/constants/colors";
 import { fontFamily } from "@/constants/fonts";
 import { images } from "@/constants/images";
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,6 +36,15 @@ export default function Index() {
         <Image source={images.mascotLogo} style={styles.logoImage} />
         <Text style={styles.title}>Welcome back! 🎉</Text>
         <Text style={styles.subtitle}>You're signed in. Home screen coming soon.</Text>
+
+        {/* ── Choose Language ── */}
+        <TouchableOpacity
+          style={styles.langBtn}
+          onPress={() => router.push("/language-select")}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.langBtnLabel}>🌍  Choose a Language</Text>
+        </TouchableOpacity>
 
         {/* ── Logout button (for testing) ── */}
         <TouchableOpacity
@@ -84,6 +93,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     textAlign: "center",
+  },
+  langBtn: {
+    marginTop: 4,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    width: "100%",
+    alignItems: "center",
+  },
+  langBtnLabel: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 16,
+    color: "#FFFFFF",
   },
   logoutBtn: {
     marginTop: 8,
