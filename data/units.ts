@@ -55,7 +55,7 @@ export const units: Unit[] = [
     description: "Start with essential German words: greetings, numbers, and basic phrases.",
     order: 1,
     color: "#CE82FF",
-    totalLessons: 3,
+    totalLessons: 6,
   },
 
   // ─────────── Japanese Units ───────────────────────────────
@@ -66,7 +66,7 @@ export const units: Unit[] = [
     description: "Learn your first Japanese characters and core vocabulary.",
     order: 1,
     color: "#FF9600",
-    totalLessons: 3,
+    totalLessons: 5,
   },
 
   // ─────────── Arabic Units ─────────────────────────────────
@@ -77,7 +77,7 @@ export const units: Unit[] = [
     description: "Discover your first Arabic words and the Arabic script.",
     order: 1,
     color: "#1CB0F6",
-    totalLessons: 3,
+    totalLessons: 5,
   },
 ];
 
