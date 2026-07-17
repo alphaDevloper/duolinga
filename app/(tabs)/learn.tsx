@@ -173,8 +173,7 @@ export default function LearnScreen() {
                   lesson={lesson}
                   status={status}
                   onPress={() => {
-                    // All lessons are openable (no locking logic)
-                    console.log("Open lesson:", lesson.id);
+                    router.push(`/lesson/${lesson.id}` as any);
                   }}
                 />
               );
